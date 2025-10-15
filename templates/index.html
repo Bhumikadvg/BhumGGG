@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GM University Coding Club</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+</head>
+<body>
+  <!-- Navbar -->
+  <header class="navbar">
+    <div class="logo">GMU <span>Coding Club</span></div>
+    <nav>
+      <a href="#home">Home</a>
+      <a href="#events">Events</a>
+      <a href="#projects">Projects</a>
+      <a href="#quiz">Quiz</a>
+      <a href="#join">Join Us</a>
+    </nav>
+  </header>
+
+  <!-- Hero Section -->
+  <section id="home" class="hero">
+    <div class="container">
+      <div class="badge">G M University</div>
+      <h1><span>GMU</span> Coding Club</h1>
+      <h2 class="tagline"><span class="cursor">|</span></h2>
+      <p>
+        Join the premier coding community at GM University. Learn, build, and innovate with passionate developers shaping the future of technology.
+      </p>
+      <div class="buttons">
+        <a href="#join" class="btn primary">Join Now →</a>
+        <a href="#events" class="btn secondary">View Events ⚡</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Events Section -->
+  <section id="events" class="section">
+    <h2 class="section-title">Upcoming Events</h2>
+    <div class="cards">
+      {% for title, description, date in events %}
+      <div class="card">
+        <h3>{{ title }}</h3>
+        <p>{{ description }}</p>
+        <span>📅 {{ date }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <!-- Projects Section -->
+  <section id="projects" class="section alt">
+    <h2 class="section-title">Our Projects</h2>
+    <div class="cards">
+      {% for title, description in projects %}
+      <div class="card">
+        <h3>{{ title }}</h3>
+        <p>{{ description }}</p>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <!-- Quiz Section -->
+  <section id="quiz" class="section quiz-section">
+    <h2 class="section-title">Test Your Coding Knowledge!</h2>
+    <div class="quiz-container">
+      <div id="quiz-content">
+        <div id="question"></div>
+        <div id="options"></div>
+        <button id="nextBtn">Next</button>
+      </div>
+      <div id="result" class="hide"></div>
+    </div>
+  </section>
+
+  <!-- Join / Contact Section -->
+  <section id="join" class="section join">
+    <h2 class="section-title">Join the Club</h2>
+    
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flash-messages">
+          {% for category, message in messages %}
+            <p class="{{ category }}">{{ message }}</p>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <form class="join-form" method="POST" action="/">
+      <input type="text" name="name" placeholder="Full Name" required />
+      <input type="email" name="email" placeholder="Email Address" required />
+      <textarea name="reason" placeholder="Tell us why you want to join..." required></textarea>
+      <button type="submit" class="btn primary">Submit</button>
+    </form>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <p>© 2025 GM University Coding Club | All Rights Reserved</p>
+    <div class="socials">
+      <a href="#">🌐</a>
+      <a href="#">💼</a>
+      <a href="#">📷</a>
+    </div>
+  </footer>
+
+  <script>
+    // Typing animation
+    const tagline = document.querySelector(".tagline");
+    const text = "Build. Code. Innovate.";
+    let index = 0;
+    function typeEffect() {
+      tagline.innerHTML = text.slice(0, index) + '<span class="cursor">|</span>';
+      index++;
+      if (index > text.length) index = 0;
+    }
+    setInterval(typeEffect, 150);
+
+    // Quiz Data from Flask
+    const quizData = {{ quiz_data|tojson }};
+    let currentQuestion = 0;
+    let score = 0;
+
+    const questionEl = document.getElementById('question');
+    const optionsEl = document.getElementById('options');
+    const nextBtn = document.getElementById('nextBtn');
+    const resultEl = document.getElementById('result');
+
+    function loadQuestion() {
+      const currentQuiz = quizData[currentQuestion];
+      questionEl.textContent = currentQuiz.question;
+      optionsEl.innerHTML = "";
+      currentQuiz.options.forEach(option => {
+        const button = document.createElement("button");
+        button.textContent = option;
+        button.onclick = () => checkAnswer(option, button);
+        optionsEl.appendChild(button);
+      });
+      nextBtn.disabled = true;
+    }
+
+    function checkAnswer(selected, button) {
+      if(selected === quizData[currentQuestion].answer){
+        score++;
+        button.style.backgroundColor = "#00e0b0"; // green
+      } else {
+        button.style.backgroundColor = "#ff3864"; // red
+      }
+      Array.from(optionsEl.children).forEach(btn => btn.disabled = true);
+      nextBtn.disabled = false;
+    }
+
+    nextBtn.addEventListener("click", () => {
+      currentQuestion++;
+      if(currentQuestion < quizData.length){
+        loadQuestion();
+      } else {
+        showResult();
+      }
+    });
+
+    function showResult(){
+      document.getElementById('quiz-content').classList.add('hide');
+      resultEl.classList.remove('hide');
+      resultEl.innerHTML = `<h3>You scored ${score} out of ${quizData.length}!</h3>
+                            <button onclick="restartQuiz()">Try Again</button>`;
+    }
+
+    function restartQuiz(){
+      currentQuestion = 0;
+      score = 0;
+      resultEl.classList.add('hide');
+      document.getElementById('quiz-content').classList.remove('hide');
+      loadQuestion();
+    }
+
+    loadQuestion();
+  </script>
+</body>
+</html>
